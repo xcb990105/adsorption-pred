@@ -67,13 +67,13 @@ def default_prediction() -> PredictionResult:
 def parse_float(raw_value: str, field_name: str) -> float | None:
     value = raw_value.strip()
     if not value:
-        st.error(f"请填写{field_name}。")
+        st.error(f"Please enter {field_name}.")
         return None
 
     try:
         return float(value)
     except ValueError:
-        st.error(f"{field_name}需要填写数字。")
+        st.error(f"{field_name} must be a number.")
         return None
 
 
@@ -93,8 +93,8 @@ def draw_bar_chart(result: PredictionResult) -> None:
     ax.axhline(0, color="#8895AA", linewidth=1)
     ax.set_ylim(-4, 4)
     ax.set_yticks([-4, -2, 0, 2, 4])
-    ax.set_ylabel("变化量 (mg/g)", fontsize=10)
-    ax.set_title("平衡吸附容量变化量", fontsize=12, pad=10, fontweight="bold")
+    ax.set_ylabel("Change (mg/g)", fontsize=10)
+    ax.set_title("Equilibrium Adsorption Capacity Change", fontsize=12, pad=10, fontweight="bold")
     ax.grid(axis="y", color="#EBF0F8", linewidth=0.8)
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
@@ -178,29 +178,24 @@ def inject_styles() -> None:
                 background: #FBFDFF;
                 color: #435278;
                 padding: 12px 14px;
+                margin-bottom: 12px;
                 font-size: 14px;
                 line-height: 1.65;
-            }
-
-            .status-dot {
-                display: inline-block;
-                width: 8px;
-                height: 8px;
-                border-radius: 999px;
-                background: #055CFF;
-                margin-right: 8px;
-                vertical-align: middle;
             }
 
             .ai-badge {
                 border: 1px solid #DDE8FA;
                 border-radius: 8px;
                 padding: 16px 12px;
+                margin: 8px 0;
                 text-align: center;
                 color: #045DFF;
                 font-size: 30px;
                 font-weight: 800;
                 min-height: 74px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
             }
 
             div[data-testid="stVerticalBlockBorderWrapper"] {
@@ -282,53 +277,53 @@ def init_state() -> None:
 
 def render_input_card() -> None:
     with st.container(border=True):
-        st.markdown('<div class="section-title">参数输入</div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-title">Parameter Input</div>', unsafe_allow_html=True)
 
         with st.form("prediction_form", clear_on_submit=False):
             organic_raw = st.text_input(
-                "有机物初始浓度",
-                placeholder="请输入浓度（支持多种离子）",
+                "Initial Organic Concentration",
+                placeholder="Enter concentration",
                 label_visibility="visible",
             )
-            st.caption("单位：mg/L")
+            st.caption("Unit: mg/L")
 
-            ph_raw = st.text_input("pH", placeholder="请输入 pH")
+            ph_raw = st.text_input("pH", placeholder="Enter pH")
 
             selected_ions = st.multiselect(
-                "离子类型",
+                "Ion Type",
                 options=IONS,
                 default=[],
-                placeholder="请选择离子类型（可多选）",
+                placeholder="Select ion types (multiple allowed)",
             )
-            st.caption("备注：金属离子请选择不参与有机物产生沉淀的金属")
+            st.caption("Note: Select metal ions that do not precipitate with the organic compound.")
 
-            ion_concentration_raw = st.text_input("离子浓度", placeholder="请输入浓度")
-            st.caption("单位：mol/L")
+            ion_concentration_raw = st.text_input("Ion Concentration", placeholder="Enter concentration")
+            st.caption("Unit: mol/L")
 
-            submitted = st.form_submit_button("开始预测", width="stretch")
+            submitted = st.form_submit_button("Start Prediction", width="stretch")
 
         if submitted:
-            organic = parse_float(organic_raw, "有机物初始浓度")
+            organic = parse_float(organic_raw, "initial organic concentration")
             ph_value = parse_float(ph_raw, "pH")
-            ion_concentration = parse_float(ion_concentration_raw, "离子浓度")
+            ion_concentration = parse_float(ion_concentration_raw, "ion concentration")
 
             if not selected_ions:
-                st.error("请至少选择一种离子类型。")
+                st.error("Please select at least one ion type.")
                 return
 
             if organic is None or ph_value is None or ion_concentration is None:
                 return
 
             if organic <= 0:
-                st.error("有机物初始浓度需要大于 0。")
+                st.error("Initial organic concentration must be greater than 0.")
                 return
 
             if ion_concentration <= 0:
-                st.error("离子浓度需要大于 0。")
+                st.error("Ion concentration must be greater than 0.")
                 return
 
             if not 0 <= ph_value <= 14:
-                st.error("pH 需要在 0 到 14 之间。")
+                st.error("pH must be between 0 and 14.")
                 return
 
             st.session_state.last_result = build_mock_prediction(
@@ -339,7 +334,7 @@ def render_input_card() -> None:
                 st.session_state.model_name,
             )
             st.session_state.has_predicted = True
-            st.success("预测完成，当前展示为 mock 结果。")
+            st.success("Prediction complete. Mock results are shown.")
 
 
 def render_result_card() -> None:
@@ -347,9 +342,9 @@ def render_result_card() -> None:
     sign = "+" if result.percent > 0 else ""
 
     with st.container(border=True):
-        st.markdown('<div class="section-title">预测结果</div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-title">Prediction Result</div>', unsafe_allow_html=True)
         st.markdown(
-            '<p class="result-label">相对吸附容量变化量（相对于空白）</p>',
+            '<p class="result-label">Relative Adsorption Capacity Change (vs. Blank)</p>',
             unsafe_allow_html=True,
         )
         st.markdown(
@@ -361,8 +356,8 @@ def render_result_card() -> None:
         st.markdown(
             """
             <div class="hint-box">
-                相对空白：表示添加离子后平衡吸附容量相对于空白体系的变化量<br>
-                最多显示 3 种离子
+                Vs. blank: change in equilibrium adsorption capacity after adding ions compared with the blank system.<br>
+                Up to 3 ion types are displayed.
             </div>
             """,
             unsafe_allow_html=True,
@@ -379,23 +374,23 @@ def render_model_metrics() -> None:
     r2, rmse, mae = metrics[st.session_state.model_name]
 
     with st.container(border=True):
-        st.markdown('<div class="section-title">模型性能</div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-title">Model Performance</div>', unsafe_allow_html=True)
         col_r2, col_rmse, col_mae = st.columns(3)
         col_r2.metric("R²", r2)
         col_rmse.metric("RMSE", rmse)
         col_mae.metric("MAE", mae)
-        st.caption("当前为 mock 性能指标，真实模型接入后可替换为验证集结果。")
+        st.caption("Mock performance metrics. Replace them with validation results after the real models are connected.")
 
 
 def render_bottom_bar() -> None:
     with st.container(border=True):
-        badge_col, model_col, current_col, button_col = st.columns([0.9, 6, 1.8, 1.7], vertical_alignment="center")
+        badge_col, model_col, current_col, button_col = st.columns([0.8, 6.4, 1.8, 1.8], vertical_alignment="center")
         with badge_col:
             st.markdown('<div class="ai-badge">AI</div>', unsafe_allow_html=True)
 
         with model_col:
             selected_model = st.radio(
-                "模型选择",
+                "Model Selection",
                 MODELS,
                 index=MODELS.index(st.session_state.model_name),
                 horizontal=True,
@@ -405,35 +400,21 @@ def render_bottom_bar() -> None:
 
         with current_col:
             st.markdown(
-                f"当前模型：<span style='color:#045DFF;font-weight:700'>{st.session_state.model_name}</span>",
+                f"Current Model: <span style='color:#045DFF;font-weight:700'>{st.session_state.model_name}</span>",
                 unsafe_allow_html=True,
             )
 
         with button_col:
-            if st.button("查看模型性能", width="stretch"):
+            if st.button("Model Performance", width="stretch"):
                 st.session_state.show_metrics = not st.session_state.show_metrics
 
     if st.session_state.show_metrics:
         render_model_metrics()
 
 
-def render_status_bar() -> None:
-    left_col, center_col, right_col = st.columns([1, 1, 1])
-    with left_col:
-        st.markdown('<span class="status-dot"></span>就绪', unsafe_allow_html=True)
-    with center_col:
-        st.markdown(
-            "<div style='text-align:center;color:#26334F;letter-spacing:4px'>程序界面示意图</div>",
-            unsafe_allow_html=True,
-        )
-    with right_col:
-        state = "已生成 mock 预测" if st.session_state.has_predicted else "等待输入"
-        st.markdown(f"<div style='text-align:right;color:#5E6A86'>{state}</div>", unsafe_allow_html=True)
-
-
 def main() -> None:
     st.set_page_config(
-        page_title="复杂离子环境下相对吸附容量预测系统",
+        page_title="Relative Adsorption Capacity Prediction System",
         page_icon="AI",
         layout="wide",
         initial_sidebar_state="collapsed",
@@ -441,7 +422,7 @@ def main() -> None:
     inject_styles()
     init_state()
 
-    st.markdown('<h1 class="app-title">复杂离子环境下相对吸附容量预测系统</h1>', unsafe_allow_html=True)
+    st.markdown('<h1 class="app-title">Relative Adsorption Capacity Prediction System</h1>', unsafe_allow_html=True)
 
     input_col, result_col = st.columns([0.47, 0.53], gap="large")
     with input_col:
@@ -451,7 +432,6 @@ def main() -> None:
 
     st.write("")
     render_bottom_bar()
-    render_status_bar()
 
 
 if __name__ == "__main__":
