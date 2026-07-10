@@ -17,6 +17,12 @@ env/
 # Streamlit local state
 .streamlit/secrets.toml
 
+# Local training inputs and reports
+data/
+reports/
+training_outputs/
+TRAINING_REPORT.md
+
 # Logs and temporary files
 *.log
 *.tmp

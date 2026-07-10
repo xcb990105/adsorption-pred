@@ -1,0 +1,129 @@
+{
+  "blank_capacity": 142.4037812,
+  "feature_names": [
+    "Salt anion hydration descriptor",
+    "Aanion",
+    "Metal ion complex descriptor",
+    "Complex binding capacity descriptor",
+    "concentration",
+    "pH"
+  ],
+  "anion_types": {
+    "Cl-": {
+      "ions": {
+        "Na+": {
+          "salt": "NaCl",
+          "features": {
+            "Salt anion hydration descriptor": -122.25599999999999,
+            "Aanion": 0.0,
+            "Metal ion complex descriptor": 0.0,
+            "Complex binding capacity descriptor": 0.0
+          }
+        },
+        "Mg2+": {
+          "salt": "MgCl2",
+          "features": {
+            "Salt anion hydration descriptor": -122.25599999999999,
+            "Aanion": -9.5483,
+            "Metal ion complex descriptor": -10.19054,
+            "Complex binding capacity descriptor": -71.71824000000001
+          }
+        },
+        "Ni2+": {
+          "salt": "NiCl2",
+          "features": {
+            "Salt anion hydration descriptor": -122.25599999999999,
+            "Aanion": -9.5483,
+            "Metal ion complex descriptor": -52.26541,
+            "Complex binding capacity descriptor": -6.461184
+          }
+        },
+        "Co2+": {
+          "salt": "CoCl2",
+          "features": {
+            "Salt anion hydration descriptor": -122.25599999999999,
+            "Aanion": -9.5483,
+            "Metal ion complex descriptor": -30.35307,
+            "Complex binding capacity descriptor": -22.700624
+          }
+        }
+      }
+    },
+    "SO4^2-": {
+      "ions": {
+        "Na+": {
+          "salt": "Na2SO4",
+          "features": {
+            "Salt anion hydration descriptor": -136.848,
+            "Aanion": 0.0,
+            "Metal ion complex descriptor": 0.0,
+            "Complex binding capacity descriptor": 0.0
+          }
+        },
+        "K+": {
+          "salt": "K2SO4",
+          "features": {
+            "Salt anion hydration descriptor": -148.69199999999998,
+            "Aanion": 0.0,
+            "Metal ion complex descriptor": 0.0,
+            "Complex binding capacity descriptor": 0.0
+          }
+        },
+        "Cu2+": {
+          "salt": "CuSO4",
+          "features": {
+            "Salt anion hydration descriptor": -136.848,
+            "Aanion": 9.5483,
+            "Metal ion complex descriptor": -41.26459,
+            "Complex binding capacity descriptor": -30.86208
+          }
+        },
+        "Mg2+": {
+          "salt": "MgSO4",
+          "features": {
+            "Salt anion hydration descriptor": -136.848,
+            "Aanion": 9.5483,
+            "Metal ion complex descriptor": -10.19054,
+            "Complex binding capacity descriptor": -71.71824000000001
+          }
+        },
+        "Zn2+": {
+          "salt": "ZnSO4",
+          "features": {
+            "Salt anion hydration descriptor": -136.848,
+            "Aanion": 9.5483,
+            "Metal ion complex descriptor": -36.01516,
+            "Complex binding capacity descriptor": -29.297168
+          }
+        },
+        "Ni2+": {
+          "salt": "NiSO4",
+          "features": {
+            "Salt anion hydration descriptor": -136.848,
+            "Aanion": 9.5483,
+            "Metal ion complex descriptor": -52.26541,
+            "Complex binding capacity descriptor": -6.461184
+          }
+        },
+        "Co2+": {
+          "salt": "CoSO4",
+          "features": {
+            "Salt anion hydration descriptor": -136.848,
+            "Aanion": 9.5483,
+            "Metal ion complex descriptor": -30.35307,
+            "Complex binding capacity descriptor": -22.700624
+          }
+        },
+        "Li+": {
+          "salt": "Li2SO4",
+          "features": {
+            "Salt anion hydration descriptor": -136.848,
+            "Aanion": 9.5483,
+            "Metal ion complex descriptor": -55.182854039377844,
+            "Complex binding capacity descriptor": -78.98785288830906
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,67 +1,51 @@
-import hashlib
+from __future__ import annotations
+
 from dataclasses import dataclass
 
 import matplotlib.pyplot as plt
 import pandas as pd
 import streamlit as st
 
+from descriptors import (
+    BLANK_CAPACITY,
+    DescriptorError,
+    available_anion_types,
+    available_ion_types,
+    build_feature_frame,
+    load_descriptor_map,
+    relative_change_percent,
+)
+from modeling import load_metrics, load_model, model_names, predict_capacity
 
-plt.rcParams["font.sans-serif"] = ["Microsoft YaHei", "SimHei", "Arial Unicode MS", "DejaVu Sans"]
+
+plt.rcParams["font.sans-serif"] = ["Arial", "DejaVu Sans"]
 plt.rcParams["axes.unicode_minus"] = False
 
-IONS = ["Na+", "Li+", "Mg2+", "Ca2+", "K+", "Cl-", "NO3-", "SO4 2-"]
-MODELS = ["CatBoost", "XGBoost", "Random Forest", "LightGBM"]
+MODELS_DIR = "models"
+TRAINING_CONCENTRATION_RANGE = (0.0, 0.5)
+TRAINING_PH_RANGE = (3.0, 11.0)
 
 
 @dataclass
 class PredictionResult:
+    capacity: float
     percent: float
     bars: pd.DataFrame
 
 
-def _stable_float(seed: str, lower: float, upper: float) -> float:
-    digest = hashlib.sha256(seed.encode("utf-8")).hexdigest()
-    ratio = int(digest[:8], 16) / 0xFFFFFFFF
-    return lower + ratio * (upper - lower)
+@st.cache_resource
+def cached_descriptor_map() -> dict:
+    return load_descriptor_map(MODELS_DIR)
 
 
-def build_mock_prediction(
-    organic_concentration: float,
-    ph_value: float,
-    ions: list[str],
-    ion_concentration: float,
-    model_name: str,
-) -> PredictionResult:
-    shown_ions = ions[:3] or ["Na+", "Li+", "Mg2+"]
-    base = f"{organic_concentration:.4f}|{ph_value:.4f}|{ion_concentration:.4f}|{','.join(shown_ions)}|{model_name}"
-    percent = round(_stable_float(base, -30.0, 20.0), 1)
-
-    rows = []
-    for index, ion in enumerate(shown_ions):
-        value_seed = f"{base}|{ion}|{index}"
-        value = round(_stable_float(value_seed, -3.4, 3.2), 1)
-        rows.append(
-            {
-                "ion": ion,
-                "change": value,
-                "color": "#055CFF" if value >= 0 else "#12C6CF",
-            }
-        )
-
-    return PredictionResult(percent=percent, bars=pd.DataFrame(rows))
+@st.cache_resource
+def cached_model(model_name: str):
+    return load_model(model_name, MODELS_DIR)
 
 
-def default_prediction() -> PredictionResult:
-    return PredictionResult(
-        percent=-12.5,
-        bars=pd.DataFrame(
-            [
-                {"ion": "Na+", "change": 1.8, "color": "#055CFF"},
-                {"ion": "Li+", "change": -2.6, "color": "#12C6CF"},
-                {"ion": "Mg2+", "change": -0.9, "color": "#6753F5"},
-            ]
-        ),
-    )
+@st.cache_data
+def cached_metrics() -> dict:
+    return load_metrics(MODELS_DIR)
 
 
 def parse_float(raw_value: str, field_name: str) -> float | None:
@@ -82,19 +66,22 @@ def draw_bar_chart(result: PredictionResult) -> None:
     fig.patch.set_facecolor("white")
     ax.set_facecolor("white")
 
+    values = result.bars["change"]
+    y_min = min(-10.0, values.min() - 5.0)
+    y_max = max(10.0, values.max() + 5.0)
+
     bars = ax.bar(
         result.bars["ion"],
-        result.bars["change"],
+        values,
         color=result.bars["color"],
         width=0.44,
         edgecolor="none",
     )
 
     ax.axhline(0, color="#8895AA", linewidth=1)
-    ax.set_ylim(-4, 4)
-    ax.set_yticks([-4, -2, 0, 2, 4])
-    ax.set_ylabel("Change (mg/g)", fontsize=10)
-    ax.set_title("Equilibrium Adsorption Capacity Change", fontsize=12, pad=10, fontweight="bold")
+    ax.set_ylim(y_min, y_max)
+    ax.set_ylabel("Change vs. Blank (%)", fontsize=10)
+    ax.set_title("Relative Adsorption Capacity Change", fontsize=12, pad=10, fontweight="bold")
     ax.grid(axis="y", color="#EBF0F8", linewidth=0.8)
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
@@ -103,15 +90,15 @@ def draw_bar_chart(result: PredictionResult) -> None:
     ax.tick_params(axis="x", labelsize=10, colors="#1B1E2D")
     ax.tick_params(axis="y", labelsize=9, colors="#34405A")
 
-    for bar, value, color in zip(bars, result.bars["change"], result.bars["color"]):
+    for bar, value, color in zip(bars, values, result.bars["color"]):
         x = bar.get_x() + bar.get_width() / 2
-        offset = 0.18 if value >= 0 else -0.18
+        offset = 0.9 if value >= 0 else -0.9
         va = "bottom" if value >= 0 else "top"
         sign = "+" if value > 0 else ""
         ax.text(
             x,
             value + offset,
-            f"{sign}{value:.1f}",
+            f"{sign}{value:.1f}%",
             ha="center",
             va=va,
             fontsize=10,
@@ -165,11 +152,18 @@ def inject_styles() -> None:
 
             .result-value {
                 color: #064FE6;
-                font-size: 74px;
+                font-size: 66px;
                 line-height: 1;
                 font-weight: 800;
                 text-align: center;
-                margin: 0 0 34px;
+                margin: 0 0 10px;
+            }
+
+            .result-subvalue {
+                color: #435278;
+                font-size: 17px;
+                text-align: center;
+                margin: 0 0 28px;
             }
 
             .hint-box {
@@ -259,7 +253,7 @@ def inject_styles() -> None:
                 }
 
                 .result-value {
-                    font-size: 54px;
+                    font-size: 48px;
                 }
             }
         </style>
@@ -269,95 +263,182 @@ def inject_styles() -> None:
 
 
 def init_state() -> None:
+    names = model_names()
     st.session_state.setdefault("model_name", "CatBoost")
-    st.session_state.setdefault("last_result", default_prediction())
+    if st.session_state.model_name not in names:
+        st.session_state.model_name = names[0]
+    st.session_state.setdefault("last_result", None)
     st.session_state.setdefault("has_predicted", False)
     st.session_state.setdefault("show_metrics", False)
 
 
-def render_input_card() -> None:
+def warn_outside_training_range(concentration: float, ph_value: float) -> None:
+    c_min, c_max = TRAINING_CONCENTRATION_RANGE
+    ph_min, ph_max = TRAINING_PH_RANGE
+    if not c_min <= concentration <= c_max:
+        st.warning(f"Ion concentration is outside the training range ({c_min:g}-{c_max:g} mol/L).")
+    if not ph_min <= ph_value <= ph_max:
+        st.warning(f"pH is outside the training range ({ph_min:g}-{ph_max:g}).")
+
+
+def make_prediction_result(
+    model_name: str,
+    descriptor_map: dict,
+    salt_anion_type: str,
+    selected_ions: list[str],
+    concentration: float,
+    ph_value: float,
+) -> PredictionResult:
+    model = cached_model(model_name)
+    rows = []
+
+    for ion in selected_ions:
+        feature_frame = build_feature_frame(
+            descriptor_map,
+            salt_anion_type,
+            ion,
+            concentration,
+            ph_value,
+        )
+        capacity = predict_capacity(model, feature_frame)
+        change = relative_change_percent(capacity)
+        rows.append(
+            {
+                "ion": ion,
+                "capacity": capacity,
+                "change": change,
+                "color": "#055CFF" if change >= 0 else "#12C6CF",
+            }
+        )
+
+    result_table = pd.DataFrame(rows)
+    primary = result_table.iloc[0]
+
+    return PredictionResult(
+        capacity=float(primary["capacity"]),
+        percent=float(primary["change"]),
+        bars=result_table.head(3).copy(),
+    )
+
+
+def render_input_card(descriptor_map: dict) -> None:
+    anion_options = available_anion_types(descriptor_map)
+
     with st.container(border=True):
         st.markdown('<div class="section-title">Parameter Input</div>', unsafe_allow_html=True)
 
+        st.markdown("Salt Anion Type")
+        salt_anion_type = st.selectbox(
+            "Salt Anion Type",
+            options=anion_options,
+            label_visibility="collapsed",
+        )
+        ion_options = available_ion_types(descriptor_map, salt_anion_type)
+
         with st.form("prediction_form", clear_on_submit=False):
-            organic_raw = st.text_input(
-                "Initial Organic Concentration",
-                placeholder="Enter concentration",
-                label_visibility="visible",
-            )
-            st.caption("Unit: mg/L")
-
-            ph_raw = st.text_input("pH", placeholder="Enter pH")
-
+            st.markdown("Ion Type")
             selected_ions = st.multiselect(
                 "Ion Type",
-                options=IONS,
+                options=ion_options,
                 default=[],
                 placeholder="Select ion types (multiple allowed)",
+                label_visibility="collapsed",
             )
-            st.caption("Note: Select metal ions that do not precipitate with the organic compound.")
+            st.caption("Available ions are limited to descriptor mappings included with the deployed model.")
 
-            ion_concentration_raw = st.text_input("Ion Concentration", placeholder="Enter concentration")
+            st.markdown("Ion Concentration")
+            ion_concentration_raw = st.text_input(
+                "Ion Concentration",
+                placeholder="Enter concentration",
+                label_visibility="collapsed",
+            )
             st.caption("Unit: mol/L")
+
+            st.markdown("pH")
+            ph_raw = st.text_input("pH", placeholder="Enter pH", label_visibility="collapsed")
 
             submitted = st.form_submit_button("Start Prediction", width="stretch")
 
         if submitted:
-            organic = parse_float(organic_raw, "initial organic concentration")
-            ph_value = parse_float(ph_raw, "pH")
             ion_concentration = parse_float(ion_concentration_raw, "ion concentration")
+            ph_value = parse_float(ph_raw, "pH")
 
             if not selected_ions:
                 st.error("Please select at least one ion type.")
                 return
 
-            if organic is None or ph_value is None or ion_concentration is None:
+            if ion_concentration is None or ph_value is None:
                 return
 
-            if organic <= 0:
-                st.error("Initial organic concentration must be greater than 0.")
-                return
-
-            if ion_concentration <= 0:
-                st.error("Ion concentration must be greater than 0.")
+            if ion_concentration < 0:
+                st.error("Ion concentration must be 0 or greater.")
                 return
 
             if not 0 <= ph_value <= 14:
                 st.error("pH must be between 0 and 14.")
                 return
 
-            st.session_state.last_result = build_mock_prediction(
-                organic,
-                ph_value,
-                selected_ions,
-                ion_concentration,
-                st.session_state.model_name,
-            )
+            warn_outside_training_range(ion_concentration, ph_value)
+
+            try:
+                st.session_state.last_result = make_prediction_result(
+                    st.session_state.model_name,
+                    descriptor_map,
+                    salt_anion_type,
+                    selected_ions,
+                    ion_concentration,
+                    ph_value,
+                )
+            except (DescriptorError, FileNotFoundError) as exc:
+                st.error(str(exc))
+                return
+
             st.session_state.has_predicted = True
-            st.success("Prediction complete. Mock results are shown.")
+            st.success("Prediction complete.")
 
 
 def render_result_card() -> None:
     result = st.session_state.last_result
-    sign = "+" if result.percent > 0 else ""
 
     with st.container(border=True):
         st.markdown('<div class="section-title">Prediction Result</div>', unsafe_allow_html=True)
         st.markdown(
-            '<p class="result-label">Relative Adsorption Capacity Change (vs. Blank)</p>',
+            '<p class="result-label">Adsorption Capacity</p>',
+            unsafe_allow_html=True,
+        )
+
+        if result is None:
+            st.markdown('<div class="result-value">--</div>', unsafe_allow_html=True)
+            st.markdown(
+                '<div class="result-subvalue">Enter parameters to run a model prediction.</div>',
+                unsafe_allow_html=True,
+            )
+            st.markdown(
+                """
+                <div class="hint-box">
+                    The deployed app loads trained model artifacts from the models directory and does not read raw data.
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+            return
+
+        sign = "+" if result.percent > 0 else ""
+        st.markdown(
+            f'<div class="result-value">{result.capacity:.2f} mg/g</div>',
             unsafe_allow_html=True,
         )
         st.markdown(
-            f'<div class="result-value">{sign}{result.percent:.1f}%</div>',
+            f'<div class="result-subvalue">{sign}{result.percent:.1f}% vs. blank</div>',
             unsafe_allow_html=True,
         )
 
         draw_bar_chart(result)
         st.markdown(
-            """
+            f"""
             <div class="hint-box">
-                Vs. blank: change in equilibrium adsorption capacity after adding ions compared with the blank system.<br>
-                Up to 3 ion types are displayed.
+                Blank capacity: {BLANK_CAPACITY:.4f} mg/g.<br>
+                Relative change = (predicted capacity - blank capacity) / blank capacity * 100%.
             </div>
             """,
             unsafe_allow_html=True,
@@ -365,21 +446,16 @@ def render_result_card() -> None:
 
 
 def render_model_metrics() -> None:
-    metrics = {
-        "CatBoost": ("0.93", "0.87", "0.18"),
-        "XGBoost": ("0.91", "0.84", "0.22"),
-        "Random Forest": ("0.88", "0.79", "0.27"),
-        "LightGBM": ("0.90", "0.82", "0.24"),
-    }
-    r2, rmse, mae = metrics[st.session_state.model_name]
+    metrics = cached_metrics()
+    model_metrics = metrics.get(st.session_state.model_name, {})
 
     with st.container(border=True):
         st.markdown('<div class="section-title">Model Performance</div>', unsafe_allow_html=True)
         col_r2, col_rmse, col_mae = st.columns(3)
-        col_r2.metric("R²", r2)
-        col_rmse.metric("RMSE", rmse)
-        col_mae.metric("MAE", mae)
-        st.caption("Mock performance metrics. Replace them with validation results after the real models are connected.")
+        col_r2.metric("Test R2", f"{model_metrics.get('test_r2', float('nan')):.3f}")
+        col_rmse.metric("Test RMSE", f"{model_metrics.get('test_rmse', float('nan')):.3f}")
+        col_mae.metric("Test MAE", f"{model_metrics.get('test_mae', float('nan')):.3f}")
+        st.caption("Metrics are stored with the deployed model artifacts. Raw training data is not used by the app.")
 
 
 def render_bottom_bar() -> None:
@@ -389,10 +465,11 @@ def render_bottom_bar() -> None:
             st.markdown('<div class="ai-badge">AI</div>', unsafe_allow_html=True)
 
         with model_col:
+            names = model_names()
             selected_model = st.radio(
                 "Model Selection",
-                MODELS,
-                index=MODELS.index(st.session_state.model_name),
+                names,
+                index=names.index(st.session_state.model_name),
                 horizontal=True,
                 label_visibility="collapsed",
             )
@@ -424,9 +501,15 @@ def main() -> None:
 
     st.markdown('<h1 class="app-title">Relative Adsorption Capacity Prediction System</h1>', unsafe_allow_html=True)
 
+    try:
+        descriptor_map = cached_descriptor_map()
+    except FileNotFoundError as exc:
+        st.error(str(exc))
+        st.stop()
+
     input_col, result_col = st.columns([0.47, 0.53], gap="large")
     with input_col:
-        render_input_card()
+        render_input_card(descriptor_map)
     with result_col:
         render_result_card()
 

@@ -1,3 +1,8 @@
 streamlit>=1.51.0
 pandas>=2.3.3
 matplotlib>=3.10.8
+scikit-learn>=1.9.0
+joblib>=1.5.3
+openpyxl>=3.1.5
+catboost>=1.2.10
+xgboost>=3.3.0

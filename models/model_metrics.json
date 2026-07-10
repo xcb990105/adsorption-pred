@@ -1,0 +1,30 @@
+{
+  "CatBoost": {
+    "test_r2": 0.7943668959172949,
+    "test_rmse": 11.987493278798388,
+    "test_mae": 6.058670389548555,
+    "training_samples": 125,
+    "test_samples": 25
+  },
+  "XGBoost": {
+    "test_r2": 0.7869372790934115,
+    "test_rmse": 12.202128534160915,
+    "test_mae": 6.165014293554079,
+    "training_samples": 125,
+    "test_samples": 25
+  },
+  "Random Forest": {
+    "test_r2": 0.7070786812432779,
+    "test_rmse": 14.307289052068342,
+    "test_mae": 6.084323833455546,
+    "training_samples": 125,
+    "test_samples": 25
+  },
+  "GPR": {
+    "test_r2": 0.7051541803893386,
+    "test_rmse": 14.354211742187228,
+    "test_mae": 5.660575550173803,
+    "training_samples": 125,
+    "test_samples": 25
+  }
+}
