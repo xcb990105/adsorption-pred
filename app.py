@@ -420,14 +420,6 @@ def render_result_card() -> None:
                 '<div class="result-subvalue">Enter parameters to run a model prediction.</div>',
                 unsafe_allow_html=True,
             )
-            st.markdown(
-                """
-                <div class="hint-box">
-                    The deployed app loads trained model artifacts from the models directory and does not read raw data.
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
             return
 
         sign = "+" if result.percent > 0 else ""
