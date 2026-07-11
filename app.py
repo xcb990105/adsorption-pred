@@ -63,7 +63,9 @@ def parse_float(raw_value: str, field_name: str) -> float | None:
 
 
 def draw_bar_chart(result: PredictionResult) -> None:
-    fig, ax = plt.subplots(figsize=(5.8, 3.35), dpi=150)
+    bar_count = max(1, len(result.bars))
+    fig_width = min(9.2, max(5.8, 2.6 + bar_count * 0.85))
+    fig, ax = plt.subplots(figsize=(fig_width, 3.35), dpi=150)
     fig.patch.set_facecolor("white")
     ax.set_facecolor("white")
 
@@ -88,7 +90,7 @@ def draw_bar_chart(result: PredictionResult) -> None:
     ax.spines["right"].set_visible(False)
     ax.spines["left"].set_color("#B9C4D6")
     ax.spines["bottom"].set_color("#B9C4D6")
-    ax.tick_params(axis="x", labelsize=10, colors="#1B1E2D")
+    ax.tick_params(axis="x", labelsize=10, colors="#1B1E2D", rotation=30 if bar_count > 5 else 0)
     ax.tick_params(axis="y", labelsize=9, colors="#34405A")
 
     for bar, value, color in zip(bars, values, result.bars["color"]):
@@ -325,7 +327,7 @@ def make_prediction_result(
         ion=str(primary["ion"]),
         capacity=float(primary["capacity"]),
         percent=float(primary["change"]),
-        bars=result_table.head(3).copy(),
+        bars=result_table.copy(),
     )
 
 
