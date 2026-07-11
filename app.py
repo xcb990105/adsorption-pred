@@ -28,6 +28,7 @@ TRAINING_PH_RANGE = (3.0, 11.0)
 
 @dataclass
 class PredictionResult:
+    ion: str
     capacity: float
     percent: float
     bars: pd.DataFrame
@@ -321,6 +322,7 @@ def make_prediction_result(
     primary = result_table.iloc[0]
 
     return PredictionResult(
+        ion=str(primary["ion"]),
         capacity=float(primary["capacity"]),
         percent=float(primary["change"]),
         bars=result_table.head(3).copy(),
@@ -350,7 +352,6 @@ def render_input_card(descriptor_map: dict) -> None:
                 placeholder="Select ion types (multiple allowed)",
                 label_visibility="collapsed",
             )
-            st.caption("Available ions are limited to descriptor mappings included with the deployed model.")
 
             st.markdown("Ion Concentration")
             ion_concentration_raw = st.text_input(
@@ -408,12 +409,12 @@ def render_result_card() -> None:
 
     with st.container(border=True):
         st.markdown('<div class="section-title">Prediction Result</div>', unsafe_allow_html=True)
-        st.markdown(
-            '<p class="result-label">Adsorption Capacity</p>',
-            unsafe_allow_html=True,
-        )
 
         if result is None:
+            st.markdown(
+                '<p class="result-label">Adsorption Capacity</p>',
+                unsafe_allow_html=True,
+            )
             st.markdown('<div class="result-value">--</div>', unsafe_allow_html=True)
             st.markdown(
                 '<div class="result-subvalue">Enter parameters to run a model prediction.</div>',
@@ -430,6 +431,10 @@ def render_result_card() -> None:
             return
 
         sign = "+" if result.percent > 0 else ""
+        st.markdown(
+            f'<p class="result-label">Adsorption Capacity for {result.ion}</p>',
+            unsafe_allow_html=True,
+        )
         st.markdown(
             f'<div class="result-value">{result.capacity:.2f} mg/g</div>',
             unsafe_allow_html=True,
