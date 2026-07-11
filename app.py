@@ -461,7 +461,6 @@ def render_model_metrics() -> None:
         col_r2.metric("Test R2", f"{model_metrics.get('test_r2', float('nan')):.3f}")
         col_rmse.metric("Test RMSE", f"{model_metrics.get('test_rmse', float('nan')):.3f}")
         col_mae.metric("Test MAE", f"{model_metrics.get('test_mae', float('nan')):.3f}")
-        st.caption("Metrics are stored with the deployed model artifacts. Raw training data is not used by the app.")
 
 
 def render_bottom_bar() -> None:
