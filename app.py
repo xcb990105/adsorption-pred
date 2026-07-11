@@ -160,10 +160,12 @@ def inject_styles() -> None:
             }
 
             .result-subvalue {
-                color: #435278;
-                font-size: 17px;
+                color: #064FE6;
+                font-size: 36px;
+                line-height: 1.15;
+                font-weight: 750;
                 text-align: center;
-                margin: 0 0 28px;
+                margin: 0 0 30px;
             }
 
             .hint-box {
@@ -254,6 +256,10 @@ def inject_styles() -> None:
 
                 .result-value {
                     font-size: 48px;
+                }
+
+                .result-subvalue {
+                    font-size: 28px;
                 }
             }
         </style>
