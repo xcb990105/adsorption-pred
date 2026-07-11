@@ -454,13 +454,16 @@ def render_result_card() -> None:
 def render_model_metrics() -> None:
     metrics = cached_metrics()
     model_metrics = metrics.get(st.session_state.model_name, {})
+    r2_value = model_metrics.get("cv_r2_mean", model_metrics.get("test_r2", float("nan")))
+    rmse_value = model_metrics.get("cv_rmse_mean", model_metrics.get("test_rmse", float("nan")))
+    mae_value = model_metrics.get("cv_mae_mean", model_metrics.get("test_mae", float("nan")))
 
     with st.container(border=True):
         st.markdown('<div class="section-title">Model Performance</div>', unsafe_allow_html=True)
         col_r2, col_rmse, col_mae = st.columns(3)
-        col_r2.metric("Test R2", f"{model_metrics.get('test_r2', float('nan')):.3f}")
-        col_rmse.metric("Test RMSE", f"{model_metrics.get('test_rmse', float('nan')):.3f}")
-        col_mae.metric("Test MAE", f"{model_metrics.get('test_mae', float('nan')):.3f}")
+        col_r2.metric("CV R2", f"{r2_value:.3f}")
+        col_rmse.metric("CV RMSE", f"{rmse_value:.3f}")
+        col_mae.metric("CV MAE", f"{mae_value:.3f}")
 
 
 def render_bottom_bar() -> None:
